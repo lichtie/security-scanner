@@ -1,0 +1,10 @@
+name: security-scanner
+runtime:
+  name: nodejs
+  options:
+    packagemanager: npm
+description: A scanner to ensure the security of my AWS accounts
+config:
+  pulumi:tags:
+    value:
+      pulumi:template: https://www.pulumi.com/ai/api/project/20c0039c-d35d-4d4c-85f5-77131689cfce.zip

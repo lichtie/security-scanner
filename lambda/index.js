@@ -1,13 +1,15 @@
-import { S3Client, ListBucketsCommand, GetBucketAclCommand } from "@aws-sdk/client-s3";
-import { APIGatewayProxyResult } from "aws-lambda";
-
+const {
+  S3Client,
+  ListBucketsCommand,
+  GetBucketAclCommand,
+} = require("@aws-sdk/client-s3");
 const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
 
-export const handler = async (): Promise<APIGatewayProxyResult> => {
+exports.handler = async () => {
   try {
     const listCommand = new ListBucketsCommand({});
     const result = await s3.send(listCommand);
-    const publicBuckets: string[] = [];
+    const publicBuckets = [];
 
     if (result.Buckets) {
       for (const bucket of result.Buckets) {
@@ -19,8 +21,10 @@ export const handler = async (): Promise<APIGatewayProxyResult> => {
 
             for (const grant of grants) {
               if (
-                grant.Grantee?.URI === "http://acs.amazonaws.com/groups/global/AllUsers" &&
-                (grant.Permission === "READ" || grant.Permission === "FULL_CONTROL")
+                grant.Grantee?.URI ===
+                  "http://acs.amazonaws.com/groups/global/AllUsers" &&
+                (grant.Permission === "READ" ||
+                  grant.Permission === "FULL_CONTROL")
               ) {
                 publicBuckets.push(bucket.Name);
                 break;

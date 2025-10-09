@@ -29,5 +29,7 @@ const lambda = new aws.lambda.Function("checkPublicS3Buckets", {
   runtime: aws.lambda.Runtime.NodeJS22dX,
   role: role.arn,
   handler: "index.handler",
-  code: "./lambda",
+  code: new pulumi.asset.AssetArchive({
+    ".": new pulumi.asset.FileArchive("./lambda"),
+  }),
 });

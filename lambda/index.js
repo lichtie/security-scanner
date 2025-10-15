@@ -31,7 +31,10 @@ exports.handler = async () => {
               }
             }
           } catch (error) {
-            console.warn(`Failed to get ACL for bucket ${bucket.Name}:`, error);
+            console.warn(
+              `Failed getting information for ${bucket.Name}:`,
+              error
+            );
           }
         }
       }

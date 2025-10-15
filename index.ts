@@ -33,3 +33,5 @@ const lambda = new aws.lambda.Function("checkPublicS3Buckets", {
     ".": new pulumi.asset.FileArchive("./lambda"),
   }),
 });
+
+const eventBus = new aws.cloudwatch.EventBus("kargo-test-event-bus");

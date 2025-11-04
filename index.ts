@@ -63,7 +63,7 @@ const bucketCreationRule = new aws.cloudwatch.EventRule(
       "detail-type": ["AWS API Call via CloudTrail"],
       detail: {
         eventSource: ["s3.amazonaws.com"],
-        eventName: ["CreateBucket"],
+        eventName: ["CreateBucket", "UpdateBucket"],
       },
     }),
     description: "Trigger S3 bucket security check when a bucket is created",

@@ -55,28 +55,37 @@ const lambdaPermission = new aws.lambda.Permission("eventBridgeInvoke", {
 });
 
 // EventBridge rule to trigger Lambda when a new S3 bucket is created
-const bucketCreationRule = new aws.cloudwatch.EventRule("s3BucketCreationRule", {
-  eventPattern: JSON.stringify({
-    source: ["aws.s3"],
-    "detail-type": ["AWS API Call via CloudTrail"],
-    detail: {
-      eventSource: ["s3.amazonaws.com"],
-      eventName: ["CreateBucket"],
-    },
-  }),
-  description: "Trigger S3 bucket security check when a bucket is created",
-});
+const bucketCreationRule = new aws.cloudwatch.EventRule(
+  "s3BucketCreationRule",
+  {
+    eventPattern: JSON.stringify({
+      source: ["aws.s3"],
+      "detail-type": ["AWS API Call via CloudTrail"],
+      detail: {
+        eventSource: ["s3.amazonaws.com"],
+        eventName: ["CreateBucket"],
+      },
+    }),
+    description: "Trigger S3 bucket security check when a bucket is created",
+  }
+);
 
 // Add Lambda as a target for the bucket creation rule
-const bucketCreationTarget = new aws.cloudwatch.EventTarget("bucketCreationTarget", {
-  rule: bucketCreationRule.name,
-  arn: lambda.arn,
-});
+const bucketCreationTarget = new aws.cloudwatch.EventTarget(
+  "bucketCreationTarget",
+  {
+    rule: bucketCreationRule.name,
+    arn: lambda.arn,
+  }
+);
 
 // Grant EventBridge permission to invoke the Lambda for bucket creation events
-const bucketCreationPermission = new aws.lambda.Permission("bucketCreationInvoke", {
-  action: "lambda:InvokeFunction",
-  function: lambda.name,
-  principal: "events.amazonaws.com",
-  sourceArn: bucketCreationRule.arn,
-});
+const bucketCreationPermission = new aws.lambda.Permission(
+  "bucketCreationInvoke",
+  {
+    action: "lambda:InvokeFunction",
+    function: lambda.name,
+    principal: "events.amazonaws.com",
+    sourceArn: bucketCreationRule.arn,
+  }
+);

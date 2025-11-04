@@ -34,12 +34,9 @@ const lambda = new aws.lambda.Function("checkPublicS3Buckets", {
   }),
 });
 
-const eventBus = new aws.cloudwatch.EventBus("kargo-test-event-bus");
-
 // EventBridge rule to trigger Lambda on a schedule (runs daily at 9 AM UTC)
 const scheduleRule = new aws.cloudwatch.EventRule("dailyS3CheckRule", {
   scheduleExpression: "cron(0 9 * * ? *)",
-  eventBusName: eventBus.name,
   description: "Trigger S3 bucket security check daily",
 });
 
@@ -47,7 +44,6 @@ const scheduleRule = new aws.cloudwatch.EventRule("dailyS3CheckRule", {
 const target = new aws.cloudwatch.EventTarget("lambdaTarget", {
   rule: scheduleRule.name,
   arn: lambda.arn,
-  eventBusName: eventBus.name,
 });
 
 // Grant EventBridge permission to invoke the Lambda

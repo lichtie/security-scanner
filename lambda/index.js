@@ -5,37 +5,49 @@ const {
 } = require("@aws-sdk/client-s3");
 const s3 = new S3Client({ region: process.env.AWS_REGION || "us-east-1" });
 
-exports.handler = async () => {
+exports.handler = async (event) => {
   try {
-    const listCommand = new ListBucketsCommand({});
-    const result = await s3.send(listCommand);
     const publicBuckets = [];
+    let bucketsToCheck = [];
 
-    if (result.Buckets) {
-      for (const bucket of result.Buckets) {
-        if (bucket.Name) {
-          try {
-            const aclCommand = new GetBucketAclCommand({ Bucket: bucket.Name });
-            const acl = await s3.send(aclCommand);
-            const grants = acl.Grants || [];
+    // Check if this is a CloudTrail event for a specific bucket
+    const bucketName = event?.detail?.requestParameters?.bucketName;
 
-            for (const grant of grants) {
-              if (
-                grant.Grantee?.URI ===
-                  "http://acs.amazonaws.com/groups/global/AllUsers" &&
-                (grant.Permission === "READ" ||
-                  grant.Permission === "FULL_CONTROL")
-              ) {
-                publicBuckets.push(bucket.Name);
-                break;
-              }
+    if (bucketName) {
+      // EventBridge trigger for specific bucket creation/update
+      console.log(`Checking specific bucket: ${bucketName}`);
+      bucketsToCheck = [{ Name: bucketName }];
+    } else {
+      // Scheduled scan - check all buckets
+      console.log("Running scheduled scan for all buckets");
+      const listCommand = new ListBucketsCommand({});
+      const result = await s3.send(listCommand);
+      bucketsToCheck = result.Buckets || [];
+    }
+
+    for (const bucket of bucketsToCheck) {
+      if (bucket.Name) {
+        try {
+          const aclCommand = new GetBucketAclCommand({ Bucket: bucket.Name });
+          const acl = await s3.send(aclCommand);
+          const grants = acl.Grants || [];
+
+          for (const grant of grants) {
+            if (
+              grant.Grantee?.URI ===
+                "http://acs.amazonaws.com/groups/global/AllUsers" &&
+              (grant.Permission === "READ" ||
+                grant.Permission === "FULL_CONTROL")
+            ) {
+              publicBuckets.push(bucket.Name);
+              break;
             }
-          } catch (error) {
-            console.warn(
-              `Failed getting information for ${bucket.Name}:`,
-              error
-            );
           }
+        } catch (error) {
+          console.warn(
+            `Failed getting information for ${bucket.Name}:`,
+            error
+          );
         }
       }
     }

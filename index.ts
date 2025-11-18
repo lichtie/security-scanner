@@ -1,6 +1,7 @@
 import * as aws from "@pulumi/aws";
 import * as pulumi from "@pulumi/pulumi";
 
+const config = new pulumi.Config();
 const role = new aws.iam.Role("lambdaRole", {
   assumeRolePolicy: aws.iam.assumeRolePolicyForPrincipal({
     Service: "lambda.amazonaws.com",
@@ -54,38 +55,40 @@ const lambdaPermission = new aws.lambda.Permission("eventBridgeInvoke", {
   sourceArn: scheduleRule.arn,
 });
 
-// // EventBridge rule to trigger Lambda when a new S3 bucket is created
-const bucketCreationRule = new aws.cloudwatch.EventRule(
-  "s3BucketCreationRule",
-  {
-    eventPattern: JSON.stringify({
-      source: ["aws.s3"],
-      "detail-type": ["AWS API Call via CloudTrail"],
-      detail: {
-        eventSource: ["s3.amazonaws.com"],
-        eventName: ["CreateBucket", "UpdateBucket"],
-      },
-    }),
-    description: "Trigger S3 bucket security check when a bucket is created",
-  }
-);
+if (config.get("rescanOnCreate")) {
+  // // EventBridge rule to trigger Lambda when a new S3 bucket is created
+  const bucketCreationRule = new aws.cloudwatch.EventRule(
+    "s3BucketCreationRule",
+    {
+      eventPattern: JSON.stringify({
+        source: ["aws.s3"],
+        "detail-type": ["AWS API Call via CloudTrail"],
+        detail: {
+          eventSource: ["s3.amazonaws.com"],
+          eventName: ["CreateBucket", "UpdateBucket"],
+        },
+      }),
+      description: "Trigger S3 bucket security check when a bucket is created",
+    }
+  );
 
-// Add Lambda as a target for the bucket creation rule
-const bucketCreationTarget = new aws.cloudwatch.EventTarget(
-  "bucketCreationTarget",
-  {
-    rule: bucketCreationRule.name,
-    arn: lambda.arn,
-  }
-);
+  // Add Lambda as a target for the bucket creation rule
+  const bucketCreationTarget = new aws.cloudwatch.EventTarget(
+    "bucketCreationTarget",
+    {
+      rule: bucketCreationRule.name,
+      arn: lambda.arn,
+    }
+  );
 
-// Grant EventBridge permission to invoke the Lambda for bucket creation events
-const bucketCreationPermission = new aws.lambda.Permission(
-  "bucketCreationInvoke",
-  {
-    action: "lambda:InvokeFunction",
-    function: lambda.name,
-    principal: "events.amazonaws.com",
-    sourceArn: bucketCreationRule.arn,
-  }
-);
+  // Grant EventBridge permission to invoke the Lambda for bucket creation events
+  const bucketCreationPermission = new aws.lambda.Permission(
+    "bucketCreationInvoke",
+    {
+      action: "lambda:InvokeFunction",
+      function: lambda.name,
+      principal: "events.amazonaws.com",
+      sourceArn: bucketCreationRule.arn,
+    }
+  );
+}
